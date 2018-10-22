@@ -1,0 +1,2 @@
+- cp -r ~/.ssh ./.ssh
+- docker build . -t myubuntu

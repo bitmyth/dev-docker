@@ -1,0 +1,57 @@
+version: '2'
+
+services:
+    nginx_proxy:
+        container_name: "nginx_proxy"
+        image: nginx-ubuntu
+        volumes:
+            - $CONFIG_DIR/env/nginx-proxy/nginx.conf:/etc/nginx/sites-available/default
+        depends_on:
+            - blog_backend
+            - blog_frontend
+        ports:
+            - "80:80"
+        networks:
+            - hub
+    blog_backend:
+        container_name: "blog_backend"
+        image: php-fpm-nginx-ubuntu
+        volumes:
+            - $ROOT_DIR/blog-backend:$MAPPED_ROOT_DIR/blog-backend
+            - $CONFIG_DIR/env/blog-backend/.env:$MAPPED_ROOT_DIR/blog-backend/.env
+            - $CONFIG_DIR/env/blog-backend/nginx.conf:/etc/nginx/sites-available/default
+        environment:
+            - ENV_FILE=$MAPPED_ROOT_DIR/blog-backend/.env
+            - WEBROOT=$MAPPED_ROOT_DIR/blog-backend/public
+            - XDEBUG_CONFIG="remote_enable=1 remote_mode=req remote_port=9000 remote_host=10.0.1.91 remote_connect_back=0"
+            - PHP_IDE_CONFIG="serverName=host"
+        working_dir: $MAPPED_ROOT_DIR/blog-backend
+        expose:
+            - "80"
+        networks:
+            - hub
+    blog_frontend:
+        container_name: "blog_frontend"
+        image: nginx-ubuntu
+        volumes:
+            - $CONFIG_DIR/env/blog-frontend/nginx.conf:/etc/nginx/sites-available/default
+            - $ROOT_DIR/blog-frontend/dist:$MAPPED_ROOT_DIR/blog-frontend
+        working_dir: $MAPPED_ROOT_DIR/blog-frontend
+        expose:
+            - "80"
+        networks:
+            - hub
+    mysql:
+        container_name: "mysql"
+        image: mysql
+        volumes:
+            - $VAR_DIR/db/blog:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: "123"
+        ports:
+            - "3306:3306"
+        networks:
+            - hub
+networks:
+    hub:
+        external: true
